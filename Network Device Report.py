@@ -113,8 +113,10 @@ def submit():
             
             # Gathers CDP information
             cdp_nei = net_connect.send_command('show cdp nei ' + ip_int_br[i][0])
+            cdp_nei = cdp_nei.lstrip('\n')
             cdp_nei = cdp_nei[289:]
             cdp_nei = cdp_nei.split(" ")
+            cdp_nei = cdp_nei[0].strip()
 
             # Gathers Speed and Duplex information 
             show_speed_duplex = net_connect.send_command('show int ' + ip_int_br[i][0] + ' capabilities | in Type|Duplex')
@@ -167,7 +169,7 @@ def submit():
                     mac,                                         # Connected Mac
                     oui,                                         # OUI Lookup
                     int_desc[i],                                 # Description
-                    cdp_nei[0]                                   # CDP Neighbors
+                    cdp_nei                                      # CDP Neighbors
                 ])
 
     # Gathers hostname from network device
