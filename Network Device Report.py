@@ -24,31 +24,57 @@ __email__ = "ryan.murray.570@gmail.com"
 __contributors__ = "Ryan Murray, Lakota Meagher"
 __status__ = "Prototype"
 
-from netmiko import ConnectHandler
-import pandas as pd
-import openpyxl
 import re
-from mac_vendor_lookup import MacLookup
+import sys
+import traceback
 from datetime import date
 from tkinter import *
+from tkinter import filedialog, messagebox
 from tkinter.ttk import Progressbar
-from tkinter import messagebox
-from tkinter import filedialog
+
+import openpyxl
+import pandas as pd
+from mac_vendor_lookup import MacLookup
+from netmiko import ConnectHandler
 from styleframe import StyleFrame
 
 root = Tk()
 root.title('Network Device Report')
+root.iconbitmap('./Network_Device_Report/mh_logo.ico')
 
-def submit():
-    global ipAddress
-    global username
-    global password
+def show_error(self, *args):
+    err = traceback.format_exception(*args)
+    messagebox.showerror('Exception', err)
+
+    IPLabel = Label(root, text="Enter IP Address of Device: ", padx=10, width=25, anchor=W)
+    usernameLabel = Label(root, text="Enter Username: ", padx=10, width=25, anchor=W)
+    passwordLabel = Label(root, text="Enter Password: ", padx=10, width=25, anchor=W)
+
+    ipAddress = Entry(root)
+    username = Entry(root)
+    password = Entry(root, show="*")
+
+    show = Label(root, text="                       ")
+    show.grid(row=5, column=0)
+
+    submitButton = Button(root, text="Submit", command=lambda: submit(ipAddress.get(), username.get(), password.get()))
+    submitButton.grid(row=4, column=0)
+
+    IPLabel.grid(row=0, column=0)
+    usernameLabel.grid(row=1, column=0)
+    passwordLabel.grid(row=2, column=0)
+
+    ipAddress.grid(row=0, column=1)
+    username.grid(row=1, column=1)
+    password.grid(row=2, column=1)
+    root.update()
+
+Tk.report_callback_exception = show_error
+
+def submit(ipAddress, username, password):
     global show
     global progress
 
-    ipAddress = ipAddress.get()
-    username = username.get()
-    password = password.get()
     show.destroy()
     show = Label(root, text="Atempting to connect to " + ipAddress)
     show.grid(row=5, column=0)
@@ -187,7 +213,7 @@ def submit():
     StyleFrame.A_FACTOR = 3
     columns = ['Interface','Speed','Duplex','Switchport','Vlan','IP Address','Status','Connected Mac','OUI Lookup','Description','CDP Neighbors']
     export_file_path = filedialog.asksaveasfilename(initialfile=hostname + ' ' + str(date.today()),defaultextension='.xlsx')
-    df = pd.DataFrame(data=table, columns=columns,)
+    df = pd.DataFrame(data=table, columns=columns)
     excel_writer = StyleFrame.ExcelWriter(export_file_path)
     sf = StyleFrame(df)
     sf.to_excel(
@@ -211,7 +237,7 @@ password = Entry(root, show="*")
 show = Label(root, text="                       ")
 show.grid(row=5, column=0)
 
-submitButton = Button(root, text="Submit", command=submit)
+submitButton = Button(root, text="Submit", command=lambda: submit(ipAddress.get(), username.get(), password.get()))
 submitButton.grid(row=4, column=0)
 
 IPLabel.grid(row=0, column=0)
