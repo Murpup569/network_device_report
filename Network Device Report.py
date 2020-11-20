@@ -5,7 +5,6 @@
 REPORT
 This outputs a csv file with the hostname of the switch and today's date.
 This script uses netmiko to gather information via ssh.
-
 ---Order of commands---
 'show ip interface brief | ex OK'
 'show interfaces description | exclude Protocol Description'
@@ -14,15 +13,14 @@ This script uses netmiko to gather information via ssh.
 'show int ' + ip_int_br[i][0] + ' switchport | in Administrative Mode|Operational Mode|Access Mode VLAN'
 'show mac address-table interface ' + ip_int_br[i][0] + ' | ex Vlan|-|Table|Total'
 'show run | in hostname'
-
 """
 
-__author__ = "Ryan Murray"
-__version__ = "1.0"
-__maintainer__ = "Ryan Murray"
-__email__ = "ryan.murray.570@gmail.com"
-__contributors__ = "Ryan Murray, Lakota Meagher"
-__status__ = "Prototype"
+__author__ = 'Ryan Murray'
+__version__ = '1.0'
+__maintainer__ = 'Ryan Murray'
+__email__ = 'ryan.murray.570@gmail.com'
+__contributors__ = 'Ryan Murray, Lakota Meagher'
+__status__ = 'Prototype'
 
 import re
 import sys
@@ -40,24 +38,23 @@ from styleframe import StyleFrame
 
 root = Tk()
 root.title('Network Device Report')
-root.iconbitmap('./Network_Device_Report/mh_logo.ico')
 
 def show_error(self, *args):
     err = traceback.format_exception(*args)
     messagebox.showerror('Exception', err)
 
-    IPLabel = Label(root, text="Enter IP Address of Device: ", padx=10, width=25, anchor=W)
-    usernameLabel = Label(root, text="Enter Username: ", padx=10, width=25, anchor=W)
-    passwordLabel = Label(root, text="Enter Password: ", padx=10, width=25, anchor=W)
+    IPLabel = Label(root, text='Enter IP Address of Device: ', padx=10, width=25, anchor=W)
+    usernameLabel = Label(root, text='Enter Username: ', padx=10, width=25, anchor=W)
+    passwordLabel = Label(root, text='Enter Password: ', padx=10, width=25, anchor=W)
 
     ipAddress = Entry(root)
     username = Entry(root)
-    password = Entry(root, show="*")
+    password = Entry(root, show='*')
 
     show = Label(root, text="                       ")
     show.grid(row=5, column=0)
 
-    submitButton = Button(root, text="Submit", command=lambda: submit(ipAddress.get(), username.get(), password.get()))
+    submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
     submitButton.grid(row=4, column=0)
 
     IPLabel.grid(row=0, column=0)
@@ -76,7 +73,7 @@ def submit(ipAddress, username, password):
     global progress
 
     show.destroy()
-    show = Label(root, text="Atempting to connect to " + ipAddress)
+    show = Label(root, text=f'Atempting to connect to {ipAddress}')
     show.grid(row=5, column=0)
     root.update()
 
@@ -90,13 +87,14 @@ def submit(ipAddress, username, password):
     # Logs into the networking device
     net_connect = ConnectHandler(**net_device)
     show.destroy()
-    show = Label(root, text="Connection to " + ipAddress + " successful!" + ipAddress)
+    show = Label(root, text=f'Connection to {ipAddress} successful!')
     show.grid(row=5, column=0)
     root.update()
 
     # Enters 'show ip int br' and puts it in ip_int_br
     show_ip_int_br = net_connect.send_command('show ip interface brief | ex OK')
     show_ip_int_br = show_ip_int_br.lstrip('\n')
+    show_ip_int_br = show_ip_int_br.rstrip('\n')
     ip_int_br = [x.split() for x in show_ip_int_br.split('\n')]
 
     # Enters 'show int desc' and puts it in int_desc
@@ -110,7 +108,7 @@ def submit(ipAddress, username, password):
 
     for i in range(len(ip_int_br)):
         show.destroy()
-        show = Label(root, text="Processing port " + str(i) + " out of " + str(len(ip_int_br)))
+        show = Label(root, text=f'Processing port {str(i)} out of {str(len(ip_int_br))}')
         show.grid(row=5, column=0)
         MAX = int(len(ip_int_br))
         progress_var = DoubleVar()
@@ -129,7 +127,7 @@ def submit(ipAddress, username, password):
                 '',                                          # Switchport
                 '',                                          # Vlan
                 ip_int_br[i][1],                             # IP Address
-                ip_int_br[i][4] + "/" + ip_int_br[i][5],     # Status
+                ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
                 '',                                          # Connected Mac
                 '',                                          # OUI Lookup
                 int_desc[i],                                 # Description
@@ -138,14 +136,14 @@ def submit(ipAddress, username, password):
         else:
             
             # Gathers CDP information
-            cdp_nei = net_connect.send_command('show cdp nei ' + ip_int_br[i][0])
+            cdp_nei = net_connect.send_command(f'show cdp nei {ip_int_br[i][0]}')
             cdp_nei = cdp_nei.lstrip('\n')
             cdp_nei = cdp_nei[289:]
-            cdp_nei = cdp_nei.split(" ")
+            cdp_nei = cdp_nei.split(' ')
             cdp_nei = cdp_nei[0].strip()
 
             # Gathers Speed and Duplex information 
-            show_speed_duplex = net_connect.send_command('show int ' + ip_int_br[i][0] + ' capabilities | in Type|Duplex')
+            show_speed_duplex = net_connect.send_command(f'show int {ip_int_br[i][0]} capabilities | in Type|Duplex')
             show_speed_duplex = show_speed_duplex[1:]
             speed_duplex = [x.split() for x in show_speed_duplex.split('\n')]
             try:
@@ -156,7 +154,7 @@ def submit(ipAddress, username, password):
                 duplex = ''
 
             # Gathers Etherchannel and Trunk information
-            show_switchport = net_connect.send_command('show int ' + ip_int_br[i][0] + ' switchport | in Administrative Mode|Operational Mode|Access Mode VLAN')
+            show_switchport = net_connect.send_command(f'show int {ip_int_br[i][0]} switchport | in Administrative Mode|Operational Mode|Access Mode VLAN')
             show_switchport = show_switchport.lstrip('\n')
             show_switchport = show_switchport.rstrip('\n')
             switchport = show_switchport.split('\n')
@@ -172,7 +170,7 @@ def submit(ipAddress, username, password):
                 vlan = 'not switchable'
 
             # Gathers mac address information
-            mac_table = net_connect.send_command('show mac address-table interface ' + ip_int_br[i][0] + ' | ex Vlan|-|Table|Total')
+            mac_table = net_connect.send_command(f'show mac address-table interface {ip_int_br[i][0]} | ex Vlan|-|Table|Total')
             mac_table = mac_table.lstrip('\n')
             mac_table = mac_table.rstrip('\n')
             mac_table = mac_table.split('\n')
@@ -191,7 +189,7 @@ def submit(ipAddress, username, password):
                     trunk_access,                                # Switchport
                     vlan,                                        # Vlan
                     ip_int_br[i][1],                             # IP Address
-                    ip_int_br[i][4] + "/" + ip_int_br[i][5],     # Status
+                    ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
                     mac,                                         # Connected Mac
                     oui,                                         # OUI Lookup
                     int_desc[i],                                 # Description
@@ -206,7 +204,7 @@ def submit(ipAddress, username, password):
     net_connect.disconnect()
 
     show.destroy()
-    show = Label(root, text="Saving report as " + hostname + ' ' + str(date.today()) + ".xlsx")
+    show = Label(root, text=f'Saving report as {hostname} {str(date.today())}.xlsx')
     show.grid(row=5, column=0)
     root.update()
     # Save table as a xlsx
@@ -224,20 +222,20 @@ def submit(ipAddress, username, password):
     )
     excel_writer.save()
 
-    messagebox.showinfo(title='Finished!', message="Time to party!")
+    messagebox.showinfo(title='Finished!', message='Time to party!')
 
-IPLabel = Label(root, text="Enter IP Address of Device: ", padx=10, width=25, anchor=W)
-usernameLabel = Label(root, text="Enter Username: ", padx=10, width=25, anchor=W)
-passwordLabel = Label(root, text="Enter Password: ", padx=10, width=25, anchor=W)
+IPLabel = Label(root, text='Enter IP Address of Device: ', padx=10, width=25, anchor=W)
+usernameLabel = Label(root, text='Enter Username: ', padx=10, width=25, anchor=W)
+passwordLabel = Label(root, text='Enter Password: ', padx=10, width=25, anchor=W)
 
 ipAddress = Entry(root)
 username = Entry(root)
-password = Entry(root, show="*")
+password = Entry(root, show='*')
 
-show = Label(root, text="                       ")
+show = Label(root, text='                       ')
 show.grid(row=5, column=0)
 
-submitButton = Button(root, text="Submit", command=lambda: submit(ipAddress.get(), username.get(), password.get()))
+submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
 submitButton.grid(row=4, column=0)
 
 IPLabel.grid(row=0, column=0)
