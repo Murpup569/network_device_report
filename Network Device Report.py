@@ -36,9 +36,6 @@ from mac_vendor_lookup import MacLookup
 from netmiko import ConnectHandler
 from styleframe import StyleFrame
 
-root = Tk()
-root.title('Network Device Report')
-
 def show_error(self, *args):
     err = traceback.format_exception(*args)
     messagebox.showerror('Exception', err)
@@ -51,7 +48,7 @@ def show_error(self, *args):
     username = Entry(root)
     password = Entry(root, show='*')
 
-    show = Label(root, text="                       ")
+    show = Label(root, text='                       ')
     show.grid(row=5, column=0)
 
     submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
@@ -65,8 +62,6 @@ def show_error(self, *args):
     username.grid(row=1, column=1)
     password.grid(row=2, column=1)
     root.update()
-
-Tk.report_callback_exception = show_error
 
 def submit(ipAddress, username, password):
     global show
@@ -224,26 +219,33 @@ def submit(ipAddress, username, password):
 
     messagebox.showinfo(title='Finished!', message='Time to party!')
 
-IPLabel = Label(root, text='Enter IP Address of Device: ', padx=10, width=25, anchor=W)
-usernameLabel = Label(root, text='Enter Username: ', padx=10, width=25, anchor=W)
-passwordLabel = Label(root, text='Enter Password: ', padx=10, width=25, anchor=W)
+if __name__ == '__main__':
+    root = Tk()
+    root.title('Network Device Report')
+    root.iconbitmap('./mh_logo.ico')
 
-ipAddress = Entry(root)
-username = Entry(root)
-password = Entry(root, show='*')
+    Tk.report_callback_exception = show_error
 
-show = Label(root, text='                       ')
-show.grid(row=5, column=0)
+    IPLabel = Label(root, text='Enter IP Address of Device: ', padx=10, width=25, anchor=W)
+    usernameLabel = Label(root, text='Enter Username: ', padx=10, width=25, anchor=W)
+    passwordLabel = Label(root, text='Enter Password: ', padx=10, width=25, anchor=W)
 
-submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
-submitButton.grid(row=4, column=0)
+    ipAddress = Entry(root)
+    username = Entry(root)
+    password = Entry(root, show='*')
 
-IPLabel.grid(row=0, column=0)
-usernameLabel.grid(row=1, column=0)
-passwordLabel.grid(row=2, column=0)
+    show = Label(root, text='                       ')
+    show.grid(row=5, column=0)
 
-ipAddress.grid(row=0, column=1)
-username.grid(row=1, column=1)
-password.grid(row=2, column=1)
+    submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
+    submitButton.grid(row=4, column=0)
 
-root.mainloop()
+    IPLabel.grid(row=0, column=0)
+    usernameLabel.grid(row=1, column=0)
+    passwordLabel.grid(row=2, column=0)
+
+    ipAddress.grid(row=0, column=1)
+    username.grid(row=1, column=1)
+    password.grid(row=2, column=1)
+
+    root.mainloop()
