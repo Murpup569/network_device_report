@@ -222,7 +222,6 @@ def submit(ipAddress, username, password):
 if __name__ == '__main__':
     root = Tk()
     root.title('Network Device Report')
-    root.iconbitmap('./mh_logo.ico')
 
     Tk.report_callback_exception = show_error
 
