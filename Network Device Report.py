@@ -48,11 +48,10 @@ def show_error(self, *args):
     username = Entry(root)
     password = Entry(root, show='*')
 
+    po_channel = Checkbutton(root, text="Do not gather port-channel macs", variable=no_po_selected)
     show = Label(root, text='                       ')
-    show.grid(row=5, column=0)
-
-    submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
-    submitButton.grid(row=4, column=0)
+    submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get(), no_po_selected.get()))
+    closeButton = Button(root, text='Close', command=lambda: close(root))
 
     IPLabel.grid(row=0, column=0)
     usernameLabel.grid(row=1, column=0)
@@ -61,11 +60,31 @@ def show_error(self, *args):
     ipAddress.grid(row=0, column=1)
     username.grid(row=1, column=1)
     password.grid(row=2, column=1)
+
+    po_channel.grid(row=3, column=0, columnspan=2)
+    submitButton.grid(row=4, column=0)
+    closeButton.grid(row=4, column=1)
+    show.grid(row=5, column=0)
+
     root.update()
 
-def submit(ipAddress, username, password):
+def close(root):
+    result = messagebox.askquestion(title="Closeing", message="Are you sure you want to close?", icon="warning")
+    if result == "yes":
+        Tk.report_callback_exception = print()
+        try:
+            # Disconnects from device
+            net_connect.disconnect()
+        except:
+            pass
+        root.destroy()
+        sys.exit()
+
+def submit(ipAddress, username, password, no_po_selected):
     global show
     global progress
+    global net_connect
+    global net_device
 
     show.destroy()
     show = Label(root, text=f'Atempting to connect to {ipAddress}')
@@ -164,20 +183,8 @@ def submit(ipAddress, username, password):
             except:
                 vlan = 'not switchable'
 
-            # Gathers mac address information
-            mac_table = net_connect.send_command(f'show mac address-table interface {ip_int_br[i][0]} | ex Vlan|-|Table|Total')
-            mac_table = mac_table.lstrip('\n')
-            mac_table = mac_table.rstrip('\n')
-            mac_table = mac_table.split('\n')
-            for m in range(len(mac_table)):
-                mac = mac_table[m].split()
-                try:
-                    mac = mac[1]
-                    oui = MacLookup().lookup(str(mac))
-                except:
-                    mac = ''
-                    oui = ''
-                # Adds gathered information to table
+            # If the user checkmarked do not gather port-channel macs
+            if no_po_selected and re.search('Port-channel.+', ip_int_br[i][0]):
                 table.append([ip_int_br[i][0],                   # Interface
                     speed,                                       # Speed
                     duplex,                                      # Duplex
@@ -185,11 +192,38 @@ def submit(ipAddress, username, password):
                     vlan,                                        # Vlan
                     ip_int_br[i][1],                             # IP Address
                     ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
-                    mac,                                         # Connected Mac
-                    oui,                                         # OUI Lookup
+                    '',                                          # Connected Mac
+                    '',                                          # OUI Lookup
                     int_desc[i],                                 # Description
                     cdp_nei                                      # CDP Neighbors
                 ])
+            else:
+                # Gathers mac address information
+                mac_table = net_connect.send_command(f'show mac address-table interface {ip_int_br[i][0]} | ex Vlan|-|Table|Total')
+                mac_table = mac_table.lstrip('\n')
+                mac_table = mac_table.rstrip('\n')
+                mac_table = mac_table.split('\n')
+                for m in range(len(mac_table)):
+                    mac = mac_table[m].split()
+                    try:
+                        mac = mac[1]
+                        oui = MacLookup().lookup(str(mac))
+                    except:
+                        mac = ''
+                        oui = ''
+                    # Adds gathered information to table
+                    table.append([ip_int_br[i][0],                   # Interface
+                        speed,                                       # Speed
+                        duplex,                                      # Duplex
+                        trunk_access,                                # Switchport
+                        vlan,                                        # Vlan
+                        ip_int_br[i][1],                             # IP Address
+                        ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
+                        mac,                                         # Connected Mac
+                        oui,                                         # OUI Lookup
+                        int_desc[i],                                 # Description
+                        cdp_nei                                      # CDP Neighbors
+                    ])
 
     # Gathers hostname from network device
     hostname = net_connect.send_command('show run | in hostname')
@@ -233,11 +267,12 @@ if __name__ == '__main__':
     username = Entry(root)
     password = Entry(root, show='*')
 
+    no_po_selected = BooleanVar()
+    no_po_selected.set(True)
+    po_channel = Checkbutton(root, text="Do not gather port-channel macs", variable=no_po_selected)
     show = Label(root, text='                       ')
-    show.grid(row=5, column=0)
-
-    submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get()))
-    submitButton.grid(row=4, column=0)
+    submitButton = Button(root, text='Submit', command=lambda: submit(ipAddress.get(), username.get(), password.get(), no_po_selected.get()))
+    closeButton = Button(root, text='Close', command=lambda: close(root))
 
     IPLabel.grid(row=0, column=0)
     usernameLabel.grid(row=1, column=0)
@@ -246,5 +281,10 @@ if __name__ == '__main__':
     ipAddress.grid(row=0, column=1)
     username.grid(row=1, column=1)
     password.grid(row=2, column=1)
+
+    po_channel.grid(row=3, column=0, columnspan=2)
+    submitButton.grid(row=4, column=0)
+    closeButton.grid(row=4, column=1)
+    show.grid(row=5, column=0)
 
     root.mainloop()
