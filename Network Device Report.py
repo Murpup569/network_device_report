@@ -159,6 +159,7 @@ def submit(ipAddress, username, password, no_po_selected):
                 cdp_nei = cdp_nei[289:]
                 cdp_nei = cdp_nei.split(' ')
                 cdp_nei = cdp_nei[0].strip()
+                cdp_nei = ('' if cdp_nei == 'Total' else cdp_nei)
             else:
                 cdp_nei = ''
             
