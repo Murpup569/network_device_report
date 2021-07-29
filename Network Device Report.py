@@ -8,7 +8,8 @@ This script uses netmiko to gather information via ssh.
 ---Order of commands---
 'show ip interface brief | ex OK'
 'show interfaces description | exclude Protocol Description'
-'show cdp nei' + ip_int_br[i][0]
+'show cdp nei' + ip_int_br[i][0]'
+'show int {ip_int_br[i][0]} | in Last input'
 'show int ' + ip_int_br[i][0] + ' capabilities | in Type|Duplex'
 'show int ' + ip_int_br[i][0] + ' switchport | in Administrative Mode|Operational Mode|Access Mode VLAN'
 'show mac address-table interface ' + ip_int_br[i][0] + ' | ex Vlan|-|Table|Total'
@@ -16,11 +17,10 @@ This script uses netmiko to gather information via ssh.
 """
 
 __author__ = 'Ryan Murray'
-__version__ = '1.0'
+__version__ = '2.0'
 __maintainer__ = 'Ryan Murray'
 __email__ = 'ryan.murray.570@gmail.com'
-__contributors__ = 'Ryan Murray, Lakota Meagher'
-__status__ = 'Prototype'
+__contributors__ = 'Ryan Murray'
 
 import re
 import sys
@@ -131,6 +131,8 @@ def submit(ipAddress, username, password, no_po_selected):
         progress.grid(row=6, column=0)
         root.update()
 
+        int_status = ip_int_br[i][4] + '/' + ip_int_br[i][5]
+
         # If the interface is a vlan it will not try to find cdp nei, speed, duplex, switchport info, mac, and oui lookup
         if re.search('Vlan.+', ip_int_br[i][0]):
 
@@ -141,20 +143,36 @@ def submit(ipAddress, username, password, no_po_selected):
                 '',                                          # Switchport
                 '',                                          # Vlan
                 ip_int_br[i][1],                             # IP Address
-                ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
+                int_status,                                  # Status
                 '',                                          # Connected Mac
                 '',                                          # OUI Lookup
                 int_desc[i],                                 # Description
                 ''                                           # CDP Neighbors
+                ''                                           # Last Input
             ])
         else:
             
             # Gathers CDP information
-            cdp_nei = net_connect.send_command(f'show cdp nei {ip_int_br[i][0]}')
-            cdp_nei = cdp_nei.lstrip('\n')
-            cdp_nei = cdp_nei[289:]
-            cdp_nei = cdp_nei.split(' ')
-            cdp_nei = cdp_nei[0].strip()
+            if int_status != 'down/down':
+                cdp_nei = net_connect.send_command(f'show cdp nei {ip_int_br[i][0]}')
+                cdp_nei = cdp_nei.lstrip('\n')
+                cdp_nei = cdp_nei[289:]
+                cdp_nei = cdp_nei.split(' ')
+                cdp_nei = cdp_nei[0].strip()
+            else:
+                cdp_nei = ''
+            
+            # Gathers Last Input
+            if int_status == 'up/up':
+                last_input = ''
+            else:
+                last_input = net_connect.send_command(f'show int {ip_int_br[i][0]} | in Last input')
+                p0 = re.compile(r'Last input (?P<time>.+), output [^h]')
+                last_input = last_input.strip()
+                m = p0.match(last_input)
+                last_input = m.groupdict()['time']
+                last_input = ('' if last_input == 'never' else last_input)
+
 
             # Gathers Speed and Duplex information 
             show_speed_duplex = net_connect.send_command(f'show int {ip_int_br[i][0]} capabilities | in Type|Duplex')
@@ -183,19 +201,20 @@ def submit(ipAddress, username, password, no_po_selected):
             except:
                 vlan = 'not switchable'
 
-            # If the user checkmarked do not gather port-channel macs
-            if no_po_selected and re.search('Port-channel.+', ip_int_br[i][0]):
+            # If the user checkmarked do not gather port-channel macs or if the interface is down
+            if (no_po_selected and re.search('Port-channel.+', ip_int_br[i][0])) or int_status == 'down/down':
                 table.append([ip_int_br[i][0],                   # Interface
                     speed,                                       # Speed
                     duplex,                                      # Duplex
                     trunk_access,                                # Switchport
                     vlan,                                        # Vlan
                     ip_int_br[i][1],                             # IP Address
-                    ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
+                    int_status,                                  # Status
                     '',                                          # Connected Mac
                     '',                                          # OUI Lookup
                     int_desc[i],                                 # Description
-                    cdp_nei                                      # CDP Neighbors
+                    cdp_nei,                                     # CDP Neighbors
+                    last_input                                   # Last Input
                 ])
             else:
                 # Gathers mac address information
@@ -218,11 +237,12 @@ def submit(ipAddress, username, password, no_po_selected):
                         trunk_access,                                # Switchport
                         vlan,                                        # Vlan
                         ip_int_br[i][1],                             # IP Address
-                        ip_int_br[i][4] + '/' + ip_int_br[i][5],     # Status
+                        int_status,                                  # Status
                         mac,                                         # Connected Mac
                         oui,                                         # OUI Lookup
                         int_desc[i],                                 # Description
-                        cdp_nei                                      # CDP Neighbors
+                        cdp_nei,                                     # CDP Neighbors
+                        last_input                                   # Last Input
                     ])
 
     # Gathers hostname from network device
@@ -238,7 +258,7 @@ def submit(ipAddress, username, password, no_po_selected):
     root.update()
     # Save table as a xlsx
     StyleFrame.A_FACTOR = 3
-    columns = ['Interface','Speed','Duplex','Switchport','Vlan','IP Address','Status','Connected Mac','OUI Lookup','Description','CDP Neighbors']
+    columns = ['Interface','Speed','Duplex','Switchport','Vlan','IP Address','Status','Connected Mac','OUI Lookup','Description','CDP Neighbors','Last Input']
     export_file_path = filedialog.asksaveasfilename(initialfile=hostname + ' ' + str(date.today()),defaultextension='.xlsx')
     df = pd.DataFrame(data=table, columns=columns)
     excel_writer = StyleFrame.ExcelWriter(export_file_path)
