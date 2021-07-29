@@ -173,7 +173,6 @@ def submit(ipAddress, username, password, no_po_selected):
                 last_input = m.groupdict()['time']
                 last_input = ('' if last_input == 'never' else last_input)
 
-
             # Gathers Speed and Duplex information 
             show_speed_duplex = net_connect.send_command(f'show int {ip_int_br[i][0]} capabilities | in Type|Duplex')
             show_speed_duplex = show_speed_duplex[1:]
