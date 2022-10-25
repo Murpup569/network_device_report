@@ -497,6 +497,7 @@ def disable():
 if __name__ == '__main__':
     root = Tk()
     root.title('Network Device Report')
+    root.iconbitmap('./mh_logo.ico')
 
     Tk.report_callback_exception = show_error
 
@@ -515,6 +516,7 @@ if __name__ == '__main__':
     L2ipAddress = Entry(L2DeviceFrame)
     L2username = Entry(L2DeviceFrame)
     L2password = Entry(L2DeviceFrame, show='*')
+    L2username.insert(0, "admin")
 
     L3IPLabel = Label(L3DeviceFrame, text='Enter IP Address of Device: ', padx=10, width=25, anchor=W)
     L3usernameLabel = Label(L3DeviceFrame, text='Enter Username: ', padx=10, width=25, anchor=W)
@@ -523,6 +525,7 @@ if __name__ == '__main__':
     L3ipAddress = Entry(L3DeviceFrame)
     L3username = Entry(L3DeviceFrame)
     L3password = Entry(L3DeviceFrame, show='*')
+    L3username.insert(0, "admin")
 
     L3Enable = Button(L3DeviceFrame, text='Enable', command=enable)
     L3Disable = Button(L3DeviceFrame, text='Disable', command=disable)
