@@ -452,15 +452,14 @@ def submit(L2ipAddress, L2username, L2password, L3ipAddress, L3username, L3passw
         columns = ['Interface','Speed','Duplex','Switchport','Vlan','SVI IP Address','Status','Connected Mac','OUI Lookup','Description','CDP Neighbors','Last Input']
     export_file_path = filedialog.asksaveasfilename(initialfile=hostname + ' ' + str(date.today()),defaultextension='.xlsx')
     df = pd.DataFrame(data=table, columns=columns)
-    excel_writer = StyleFrame.ExcelWriter(export_file_path)
     sf = StyleFrame(df)
-    sf.to_excel(
-        excel_writer=excel_writer, 
-        best_fit=columns,
-        columns_and_rows_to_freeze='B2', 
-        row_to_add_filters=0,
-    )
-    excel_writer.save()
+    with StyleFrame.ExcelWriter(export_file_path) as excel_writer:
+        sf.to_excel(
+            excel_writer=excel_writer,
+            best_fit=columns,
+            columns_and_rows_to_freeze='B2',
+            row_to_add_filters=0,
+        )
 
     messagebox.showinfo(title='Finished!', message='Time to party!')
 
@@ -569,3 +568,4 @@ if __name__ == '__main__':
     show.grid(row=5, column=0)
 
     root.mainloop()
+
